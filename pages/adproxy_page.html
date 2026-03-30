@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор MTProto Proxy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #eaeaea;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #a0c4ff;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+        
+        .form-section {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .input-group {
+            position: relative;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #90e0ef;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        input::placeholder {
+            color: #666;
+        }
+        
+        .hint {
+            font-size: 0.8rem;
+            color: #a0c4ff;
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+        
+        .commands-section {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        .section-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #00d4ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .step {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #00d4ff;
+        }
+        
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #00d4ff, #7b2cbf);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        
+        .step-title {
+            font-size: 1.1rem;
+            color: #caf0f8;
+            font-weight: 600;
+        }
+        
+        .step-desc {
+            color: #a0c4ff;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .command-block {
+            background: #0d1117;
+            border-radius: 10px;
+            padding: 15px;
+            position: relative;
+            border: 1px solid #30363d;
+            margin-bottom: 10px;
+        }
+        
+        .command-text {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            color: #c9d1d9;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            padding-right: 100px;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .copy-btn:hover {
+            background: #2ea043;
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: #00d4ff;
+            color: #000;
+        }
+        
+        .highlight {
+            color: #ffa657;
+            font-weight: bold;
+            background: rgba(255, 166, 87, 0.1);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        
+        .warning {
+            background: rgba(255, 166, 87, 0.15);
+            border-left: 4px solid #ffa657;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            color: #ffcc80;
+        }
+        
+        .success {
+            background: rgba(35, 134, 54, 0.15);
+            border-left: 4px solid #238636;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            color: #7ee787;
+        }
+        
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .form-section, .commands-section {
+                padding: 20px;
+            }
+            
+            .command-text {
+                font-size: 0.75rem;
+                padding-right: 0;
+                margin-bottom: 40px;
+            }
+            
+            .copy-btn {
+                top: auto;
+                bottom: 10px;
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 MTProto Proxy Setup</h1>
+        <p class="subtitle">Генератор команд для установки прокси с рекламой</p>
+        
+        <div class="form-section">
+            <div class="form-grid">
+                <div class="input-group">
+                    <label for="containerName">Имя контейнера</label>
+                    <input type="text" id="containerName" placeholder="mtproto-proxy" value="mtproto-proxy">
+                    <div class="hint">Например: mtproto-proxy, proxy1, tg-proxy</div>
+                </div>
+                <div class="input-group">
+                    <label for="port">Порт сервера</label>
+                    <input type="number" id="port" placeholder="443" value="443">
+                    <div class="hint">Рекомендуется 443 (HTTPS) или 8080</div>
+                </div>
+                <div class="input-group">
+                    <label for="tag">Рекламный TAG</label>
+                    <input type="text" id="tag" placeholder="3f40462915a3e6026a4d790127b95ded">
+                    <div class="hint">32 символа от @MTProxybot (шаг 4)</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="commands-section">
+            <h2 class="section-title">📋 Пошаговые команды</h2>
+            
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Подготовка сервера</div>
+                </div>
+                <div class="step-desc">Установите Docker, если ещё не установлен:</div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd1">curl -sSL https://get.docker.com/ | CHANNEL=stable bash</div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd1', this)">📋 Копировать</button>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Первый запуск (генерация секрета)</div>
+                </div>
+                <div class="step-desc">Запустите контейнер для генерации секретного ключа:</div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd2">docker run -d \
+  -p <span class="highlight" id="h-port">443</span>:443 \
+  --name=<span class="highlight" id="h-name">mtproto-proxy</span> \
+  --restart=always \
+  -v proxy-config:/data \
+  telegrammessenger/proxy:latest</div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd2', this)">📋 Копировать</button>
+                </div>
+                <div class="warning">
+                    ⚠️ После запуска выполните: <code>docker logs <span id="h-name2">mtproto-proxy</span></code><br>
+                    Скопируйте секрет (32 символа) и зарегистрируйтесь в @MTProxybot
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Остановка старого контейнера</div>
+                </div>
+                <div class="step-desc">Перед перезапуском с TAG остановите старый контейнер:</div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd3">docker stop <span class="highlight" id="h-name3">mtproto-proxy</span> && docker rm <span class="highlight" id="h-name4">mtproto-proxy</span></div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd3', this)">📋 Копировать</button>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Финальный запуск с рекламой</div>
+                </div>
+                <div class="step-desc">Запустите прокси с рекламным тегом:</div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd4">docker run -d \
+  -p <span class="highlight" id="h-port2">443</span>:443 \
+  --name=<span class="highlight" id="h-name5">mtproto-proxy</span> \
+  --restart=always \
+  -v proxy-config:/data \
+  -e TAG=<span class="highlight" id="h-tag">ваш_тег_от_бота</span> \
+  telegrammessenger/proxy:latest</div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd4', this)">📋 Копировать</button>
+                </div>
+                <div class="success" id="tag-warning" style="display: none;">
+                    ✅ Тег подставлен! Скопируйте команду выше.
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">5</div>
+                    <div class="step-title">Проверка и получение ссылки</div>
+                </div>
+                <div class="step-desc">Посмотрите логи для получения ссылки на подключение:</div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd5">docker logs <span class="highlight" id="h-name6">mtproto-proxy</span></div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd5', this)">📋 Копировать</button>
+                </div>
+                <div class="success">
+                    В логах найдите ссылки вида:<br>
+                    <code>tg://proxy?server=IP&port=<span id="h-port3">443</span>&secret=...</code>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">⚡</div>
+                    <div class="step-title">Дополнительные команды</div>
+                </div>
+                
+                <div class="step-desc">Перезапуск контейнера:</div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd6">docker restart <span class="highlight" id="h-name7">mtproto-proxy</span></div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd6', this)">📋 Копировать</button>
+                </div>
+                
+                <div class="step-desc" style="margin-top: 15px;">Просмотр статуса:</div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd7">docker ps -a | grep <span class="highlight" id="h-name8">mtproto-proxy</span></div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd7', this)">📋 Копировать</button>
+                </div>
+                
+                <div class="step-desc" style="margin-top: 15px;">Удаление контейнера и тома (полная очистка):</div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd8">docker stop <span class="highlight" id="h-name9">mtproto-proxy</span> && docker rm <span class="highlight" id="h-name10">mtproto-proxy</span> && docker volume rm proxy-config</div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd8', this)">📋 Копировать</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const containerInput = document.getElementById('containerName');
+        const portInput = document.getElementById('port');
+        const tagInput = document.getElementById('tag');
+        
+        function updateValues() {
+            const name = containerInput.value || 'mtproto-proxy';
+            const port = portInput.value || '443';
+            const tag = tagInput.value || 'ваш_тег_от_бота';
+            
+            // Обновляем все имена контейнеров
+            document.getElementById('h-name').textContent = name;
+            document.getElementById('h-name2').textContent = name;
+            document.getElementById('h-name3').textContent = name;
+            document.getElementById('h-name4').textContent = name;
+            document.getElementById('h-name5').textContent = name;
+            document.getElementById('h-name6').textContent = name;
+            document.getElementById('h-name7').textContent = name;
+            document.getElementById('h-name8').textContent = name;
+            document.getElementById('h-name9').textContent = name;
+            document.getElementById('h-name10').textContent = name;
+            
+            // Обновляем порты
+            document.getElementById('h-port').textContent = port;
+            document.getElementById('h-port2').textContent = port;
+            document.getElementById('h-port3').textContent = port;
+            
+            // Обновляем тег
+            document.getElementById('h-tag').textContent = tag;
+            
+            // Показываем уведомление если тег введён
+            const warning = document.getElementById('tag-warning');
+            if (tagInput.value.length >= 32) {
+                warning.style.display = 'block';
+            } else {
+                warning.style.display = 'none';
+            }
+        }
+        
+        containerInput.addEventListener('input', updateValues);
+        portInput.addEventListener('input', updateValues);
+        tagInput.addEventListener('input', updateValues);
+        
+        function copyToClipboard(elementId, btn) {
+            const element = document.getElementById(elementId);
+            const text = element.innerText;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ Скопировано!';
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(() => {
+                const range = document.createRange();
+                range.selectNode(element);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+                
+                btn.innerHTML = '✅ Скопировано!';
+                setTimeout(() => {
+                    btn.innerHTML = '📋 Копировать';
+                }, 2000);
+            });
+        }
+        
+        updateValues();
+    </script>
+</body>
+</html>
