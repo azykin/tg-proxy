@@ -12,11 +12,11 @@
 Выполните команду, заменив `YOUR_PORT` на желаемый порт (например, 443):
 
 ```
-docker run -d  
-  -p YOUR_PORT:443  
-  --name=mtproto-proxy  
-  --restart=always  
-  -v proxy-config:/data  
+docker run -d  \
+  -p YOUR_PORT:443  \
+  --name=mtproto-proxy  \
+  --restart=always  \
+  -v proxy-config:/data  \
   telegrammessenger/proxy:latest
 ```
 
@@ -54,12 +54,12 @@ docker rm mtproto-proxy
 Запустите новый контейнер, добавив переменную окружения TAG:
 
 ```
-docker run -d 
-  -p YOUR_PORT:443 
-  --name=mtproto-proxy 
-  --restart=always 
-  -v proxy-config:/data 
-  -e TAG=ваш_тег_от_бота 
+docker run -d \
+  -p YOUR_PORT:443 \
+  --name=mtproto-proxy \
+  --restart=always \
+  -v proxy-config:/data \
+  -e TAG=ваш_тег_от_бота \
   telegrammessenger/proxy:latest
 ```
 
