@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTProto Proxy + FakeTLS Setup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #eaeaea;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #00d4ff;
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+        
+        .back-link:hover {
+            color: #7b2cbf;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00ff88, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #a0c4ff;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+        
+        .form-section {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+        }
+        
+        .section-label {
+            color: #00ff88;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-label::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00ff88;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            position: relative;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #90e0ef;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+        
+        input::placeholder {
+            color: #666;
+        }
+        
+        .hint {
+            font-size: 0.8rem;
+            color: #a0c4ff;
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+        
+        .generate-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            border: none;
+            border-radius: 12px;
+            color: #000;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+        }
+        
+        .generated-secret {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .generated-secret-label {
+            color: #7ee787;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        .generated-secret-value {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 1.3rem;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            word-break: break-all;
+        }
+        
+        .copy-small {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 5px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+        
+        .copy-small:hover {
+            background: #00ff88;
+            color: #000;
+        }
+        
+        .commands-section {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+        }
+        
+        .section-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #00ff88;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .step {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #00ff88;
+        }
+        
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+            color: #000;
+        }
+        
+        .step-title {
+            font-size: 1.1rem;
+            color: #caf0f8;
+            font-weight: 600;
+        }
+        
+        .step-desc {
+            color: #a0c4ff;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .step-desc code {
+            background: rgba(255, 166, 87, 0.2);
+            color: #ffa657;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        .command-block {
+            background: #0d1117;
+            border-radius: 10px;
+            padding: 15px;
+            position: relative;
+            border: 1px solid #30363d;
+            margin-bottom: 10px;
+        }
+        
+        .command-text {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            color: #c9d1d9;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            padding-right: 100px;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .copy-btn:hover {
+            background: #2ea043;
+            transform: translateY(-1px);
+        }
+        
+        .copy-btn.copied {
+            background: #00ff88;
+            color: #000;
+        }
+        
+        .highlight {
+            color: #ffa657;
+            font-weight: bold;
+            background: rgba(255, 166, 87, 0.1);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        
+        .warning {
+            background: rgba(255, 166, 87, 0.15);
+            border-left: 4px solid #ffa657;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            color: #ffcc80;
+        }
+        
+        .info {
+            background: rgba(0, 212, 255, 0.15);
+            border-left: 4px solid #00d4ff;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            color: #90e0ef;
+        }
+        
+        .success {
+            background: rgba(0, 255, 136, 0.15);
+            border-left: 4px solid #00ff88;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            color: #7ee787;
+        }
+        
+        .final-link {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 212, 255, 0.2));
+            border: 2px solid #00ff88;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .final-link-label {
+            color: #90e0ef;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        .final-link-url {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 1rem;
+            color: #fff;
+            word-break: break-all;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            color: #a0c4ff;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .form-section, .commands-section {
+                padding: 20px;
+            }
+            
+            .command-text {
+                font-size: 0.75rem;
+                padding-right: 0;
+                margin-bottom: 40px;
+            }
+            
+            .copy-btn {
+                top: auto;
+                bottom: 10px;
+                right: 10px;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Назад к выбору типа прокси</a>
+        
+        <h1>🔒 FakeTLS Proxy Setup</h1>
+        <p class="subtitle">Максимальная маскировка трафика под HTTPS, без рекламы</p>
+        
+        <!-- КОНФИГУРАЦИЯ -->
+        <div class="form-section">
+            <div class="section-label">Конфигурация сервера</div>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label for="domain">Доменное имя *</label>
+                    <input type="text" id="domain" placeholder="proxy.example.com">
+                    <div class="hint">Домен должен указывать на IP этого сервера</div>
+                </div>
+                <div class="input-group">
+                    <label for="email">Email для SSL *</label>
+                    <input type="email" id="email" placeholder="admin@example.com">
+                    <div class="hint">Для получения Let's Encrypt сертификата</div>
+                </div>
+                <div class="input-group">
+                    <label for="port">Порт прокси</label>
+                    <input type="number" id="port" placeholder="443" value="443">
+                    <div class="hint">443 рекомендуется для маскировки</div>
+                </div>
+                <div class="input-group">
+                    <label for="containerName">Имя контейнера</label>
+                    <input type="text" id="containerName" placeholder="faketls-proxy" value="faketls-proxy">
+                    <div class="hint">Для управления контейнером</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ГЕНЕРАЦИЯ СЕКРЕТА -->
+        <div class="form-section">
+            <div class="section-label">Генерация секрета</div>
+            <div class="step-desc" style="margin-bottom: 15px;">
+                FakeTLS требует секрет в формате <code>ee</code> + 32 hex символа + домен в hex
+            </div>
+            <button class="generate-btn" onclick="generateSecret()">Сгенерировать FakeTLS секрет</button>
+            
+            <div id="secretOutput" class="hidden">
+                <div class="generated-secret">
+                    <div class="generated-secret-label">Ваш FakeTLS секрет</div>
+                    <div class="generated-secret-value" id="generatedSecretValue"></div>
+                    <button class="copy-small" onclick="copySecret()">📋 Копировать секрет</button>
+                </div>
+            </div>
+            
+            <div class="form-grid" style="margin-top: 20px;">
+                <div class="input-group">
+                    <label for="secret">Или введите секрет вручную</label>
+                    <input type="text" id="secret" placeholder="ee1234567890abcdef...">
+                    <div class="hint">Должен начинаться с ee и содержать домен в hex</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- КОМАНДЫ -->
+        <div class="commands-section">
+            <h2 class="section-title">📋 Пошаговая установка</h2>
+            
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Установка Docker</div>
+                </div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd1">curl -sSL https://get.docker.com/ | CHANNEL=stable bash</div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd1', this)">📋 Копировать</button>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Установка Docker Compose</div>
+                </div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd2">curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose</div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd2', this)">📋 Копировать</button>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Создание директории и переход в неё</div>
+                </div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd3">mkdir -p ~/tg-proxy/<span class="highlight" id="h-name">faketls-proxy</span> && cd ~/tg-proxy/<span class="highlight" id="h-name2">faketls-proxy</span></div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd3', this)">📋 Копировать</button>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Создание Docker Compose конфигурации</div>
+                </div>
+                <div class="step-desc">
+                    Создайте файл <code>docker-compose.yml</code> со следующим содержимым:
+                </div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd4">cat > docker-compose.yml << 'EOF'
+version: '3'
+
+services:
+  mtproto-proxy:
+    image: telegrammessenger/proxy:latest
+    container_name: <span class="highlight" id="h-name3">faketls-proxy</span>
+    restart: always
+    ports:
+      - "<span class="highlight" id="h-port">443</span>:443"
+    volumes:
+      - ./data:/data
+      - ./certs:/etc/letsencrypt
+    environment:
+      - SECRET=<span class="highlight" id="h-secret">ваш_секрет</span>
+      - DOMAIN=<span class="highlight" id="h-domain">example.com</span>
+    command: >
+      sh -c "while ! [ -f /etc/letsencrypt/live/<span class="highlight" id="h-domain2">example.com</span>/fullchain.pem ]; do
+        echo 'Waiting for SSL certificates...';
+        sleep 5;
+      done;
+      exec mtproto-proxy -u nobody -p 8080 -H 443 -S <span class="highlight" id="h-secret2">ваш_секрет</span> 
+        --domain <span class="highlight" id="h-domain3">example.com</span> 
+        --tls /etc/letsencrypt/live/<span class="highlight" id="h-domain4">example.com</span>/fullchain.pem 
+        /etc/letsencrypt/live/<span class="highlight" id="h-domain5">example.com</span>/privkey.pem"
+
+  certbot:
+    image: certbot/certbot
+    container_name: <span class="highlight" id="h-name4">faketls-proxy-certbot</span>
+    volumes:
+      - ./certs:/etc/letsencrypt
+      - ./certbot-data:/var/lib/letsencrypt
+    command: >
+      certonly --standalone 
+      --agree-tos 
+      --non-interactive 
+      --email <span class="highlight" id="h-email">admin@example.com</span> 
+      -d <span class="highlight" id="h-domain6">example.com</span>
+EOF</div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd4', this)">📋 Копировать</button>
+                </div>
+                <div class="warning" id="configWarning" style="display: none;">
+                    ⚠️ Заполните домен, email и секрет для формирования конфигурации
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">5</div>
+                    <div class="step-title">Запуск контейнеров</div>
+                </div>
+                <div class="step-desc">
+                    Сначала получим SSL-сертификат, затем запустим прокси:
+                </div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd5">docker-compose up -d certbot && sleep 10 && docker-compose up -d mtproto-proxy</div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd5', this)">📋 Копировать</button>
+                </div>
+                <div class="info">
+                    ℹ️ Certbot автоматически получит SSL-сертификат от Let's Encrypt. 
+                    Убедитесь, что порты 80 и 443 открыты и домен указывает на сервер.
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">6</div>
+                    <div class="step-title">Проверка логов</div>
+                </div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd6">docker-compose logs -f mtproto-proxy</div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd6', this)">📋 Копировать</button>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">7</div>
+                    <div class="step-title">Автообновление сертификатов</div>
+                </div>
+                <div class="step-desc">
+                    Добавьте в cron обновление сертификатов (каждые 12 часов):
+                </div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd7">(crontab -l 2>/dev/null; echo "0 */12 * * * cd ~/tg-proxy/<span class="highlight" id="h-name5">faketls-proxy</span> && docker-compose run --rm certbot renew && docker-compose restart mtproto-proxy") | crontab -</div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd7', this)">📋 Копировать</button>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">8</div>
+                    <div class="step-title">Готовая ссылка для подключения</div>
+                </div>
+                <div class="final-link" id="finalLink" style="display: none;">
+                    <div class="final-link-label">🔗 Ссылка для Telegram</div>
+                    <div class="final-link-url" id="finalLinkUrl"></div>
+                    <button class="copy-btn" style="position: relative; top: 0; right: 0;" onclick="copyFinalLink()">📋 Копировать ссылку</button>
+                </div>
+                <div class="warning" id="linkWarning">
+                    ⚠️ Заполните все обязательные поля (домен, порт, секрет) чтобы сформировать ссылку
+                </div>
+            </div>
+        </div>
+        
+        <!-- ДОПОЛНИТЕЛЬНЫЕ КОМАНДЫ -->
+        <div class="commands-section" style="margin-top: 30px;">
+            <h2 class="section-title">🛠️ Управление прокси</h2>
+            
+            <div class="step">
+                <div class="step-header">
+                    <div class="step-number">⚡</div>
+                    <div class="step-title">Основные команды</div>
+                </div>
+                
+                <div class="step-desc">Просмотр статуса:</div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd8">docker-compose ps</div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd8', this)">📋 Копировать</button>
+                </div>
+                
+                <div class="step-desc" style="margin-top: 15px;">Перезапуск прокси:</div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd9">docker-compose restart mtproto-proxy</div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd9', this)">📋 Копировать</button>
+                </div>
+                
+                <div class="step-desc" style="margin-top: 15px;">Просмотр логов certbot:</div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd10">docker-compose logs certbot</div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd10', this)">📋 Копировать</button>
+                </div>
+                
+                <div class="step-desc" style="margin-top: 15px;">Обновление образа:</div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd11">docker-compose pull && docker-compose up -d</div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd11', this)">📋 Копировать</button>
+                </div>
+                
+                <div class="step-desc" style="margin-top: 15px;">Остановка прокси:</div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd12">docker-compose down</div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd12', this)">📋 Копировать</button>
+                </div>
+                
+                <div class="step-desc" style="margin-top: 15px;">Полная очистка (с удалением данных и сертификатов):</div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd13">docker-compose down -v && rm -rf ~/tg-proxy/<span class="highlight" id="h-name6">faketls-proxy</span></div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd13', this)">📋 Копировать</button>
+                </div>
+                
+                <div class="step-desc" style="margin-top: 15px;">Принудительное обновление сертификата:</div>
+                <div class="command-block">
+                    <div class="command-text" id="cmd14">docker-compose run --rm certbot renew --force-renew && docker-compose restart mtproto-proxy</div>
+                    <button class="copy-btn" onclick="copyToClipboard('cmd14', this)">📋 Копировать</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const domainInput = document.getElementById('domain');
+        const emailInput = document.getElementById('email');
+        const portInput = document.getElementById('port');
+        const containerInput = document.getElementById('containerName');
+        const secretInput = document.getElementById('secret');
+        
+        let generatedSecret = '';
+        
+        function stringToHex(str) {
+            return Array.from(str)
+                .map(c => c.charCodeAt(0).toString(16).padStart(2, '0'))
+                .join('');
+        }
+        
+        function generateSecret() {
+            const domain = domainInput.value;
+            if (!domain) {
+                alert('Сначала введите доменное имя!');
+                domainInput.focus();
+                return;
+            }
+            
+            // Генерируем 16 байт (32 hex символа)
+            const array = new Uint8Array(16);
+            crypto.getRandomValues(array);
+            const randomHex = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+            
+            // Формат: ee + random + domain в hex
+            const domainHex = stringToHex(domain);
+            generatedSecret = 'ee' + randomHex + domainHex;
+            
+            document.getElementById('generatedSecretValue').textContent = generatedSecret;
+            document.getElementById('secretOutput').classList.remove('hidden');
+            
+            secretInput.value = generatedSecret;
+            updateValues();
+        }
+        
+        function copySecret() {
+            navigator.clipboard.writeText(generatedSecret).then(() => {
+                alert('Секрет скопирован!');
+            });
+        }
+        
+        function copyFinalLink() {
+            const link = document.getElementById('finalLinkUrl').textContent;
+            navigator.clipboard.writeText(link).then(() => {
+                alert('Ссылка скопирована!');
+            });
+        }
+        
+        function updateValues() {
+            const domain = domainInput.value || 'example.com';
+            const email = emailInput.value || 'admin@example.com';
+            const port = portInput.value || '443';
+            const name = containerInput.value || 'faketls-proxy';
+            const secret = secretInput.value || 'ваш_секрет';
+            
+            // Обновляем все имена
+            for (let i = 1; i <= 6; i++) {
+                const el = document.getElementById(`h-name${i === 1 ? '' : i}`);
+                if (el) el.textContent = name;
+            }
+            document.getElementById('h-name').textContent = name;
+            
+            // Обновляем порты
+            document.getElementById('h-port').textContent = port;
+            
+            // Обновляем домены
+            for (let i = 1; i <= 6; i++) {
+                const el = document.getElementById(`h-domain${i === 1 ? '' : i}`);
+                if (el) el.textContent = domain;
+            }
+            document.getElementById('h-domain').textContent = domain;
+            
+            // Обновляем email
+            document.getElementById('h-email').textContent = email;
+            
+            // Обновляем секреты
+            document.getElementById('h-secret').textContent = secret;
+            document.getElementById('h-secret2').textContent = secret;
+            
+            // Показываем/скрываем предупреждения
+            const hasAllFields = domainInput.value && emailInput.value && secretInput.value && secretInput.value.length > 32;
+            
+            document.getElementById('configWarning').style.display = hasAllFields ? 'none' : 'block';
+            
+            // Формируем итоговую ссылку
+            const finalLinkEl = document.getElementById('finalLink');
+            const linkWarningEl = document.getElementById('linkWarning');
+            const finalLinkUrlEl = document.getElementById('finalLinkUrl');
+            
+            if (hasAllFields) {
+                const link = `tg://proxy?server=${domain}&port=${port}&secret=${secret}`;
+                finalLinkUrlEl.textContent = link;
+                finalLinkEl.style.display = 'block';
+                linkWarningEl.style.display = 'none';
+            } else {
+                finalLinkEl.style.display = 'none';
+                linkWarningEl.style.display = 'block';
+            }
+        }
+        
+        function copyToClipboard(elementId, btn) {
+            const element = document.getElementById(elementId);
+            const text = element.innerText;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ Скопировано!';
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(() => {
+                const range = document.createRange();
+                range.selectNode(element);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+                
+                btn.innerHTML = '✅ Скопировано!';
+                setTimeout(() => {
+                    btn.innerHTML = '📋 Копировать';
+                }, 2000);
+            });
+        }
+        
+        // Слушатели
+        domainInput.addEventListener('input', updateValues);
+        emailInput.addEventListener('input', updateValues);
+        portInput.addEventListener('input', updateValues);
+        containerInput.addEventListener('input', updateValues);
+        secretInput.addEventListener('input', updateValues);
+        
+        // Инициализация
+        updateValues();
+    </script>
+</body>
+</html>
